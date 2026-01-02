@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac Activity Tracker - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Activity Tracker</h1>
+            <div class="date-selector">
+                <button id="prev-day" class="btn btn-icon">&larr;</button>
+                <input type="date" id="selected-date" />
+                <button id="next-day" class="btn btn-icon">&rarr;</button>
+                <button id="today-btn" class="btn">Today</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Productivity Score Card -->
+            <section class="card productivity-card">
+                <div class="score-display">
+                    <div class="score-circle" id="score-circle">
+                        <span class="score-value" id="productivity-score">--</span>
+                        <span class="score-grade" id="productivity-grade"></span>
+                    </div>
+                </div>
+                <div class="score-details">
+                    <h2>Productivity Score</h2>
+                    <div class="score-breakdown">
+                        <div class="breakdown-item">
+                            <span class="label">Productive</span>
+                            <span class="value" id="productive-hours">0h</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="label">Distracting</span>
+                            <span class="value" id="distraction-hours">0h</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="label">Total Active</span>
+                            <span class="value" id="total-hours">0h</span>
+                        </div>
+                    </div>
+                    <div class="feedback" id="productivity-feedback"></div>
+                </div>
+            </section>
+
+            <!-- Highlights -->
+            <section class="card highlights-card">
+                <h2>Daily Highlights</h2>
+                <ul id="highlights-list" class="highlights-list"></ul>
+            </section>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-apps">0</span>
+                    <span class="stat-label">Apps Used</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-sites">0</span>
+                    <span class="stat-label">Sites Visited</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-words">0</span>
+                    <span class="stat-label">Words Typed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="stat-wpm">0</span>
+                    <span class="stat-label">Avg WPM</span>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <!-- App Usage Chart -->
+                <section class="card chart-card">
+                    <h2>App Usage</h2>
+                    <div class="chart-container">
+                        <canvas id="apps-chart"></canvas>
+                    </div>
+                    <div class="chart-legend" id="apps-legend"></div>
+                </section>
+
+                <!-- Website Usage Chart -->
+                <section class="card chart-card">
+                    <h2>Website Usage</h2>
+                    <div class="chart-container">
+                        <canvas id="websites-chart"></canvas>
+                    </div>
+                    <div class="chart-legend" id="websites-legend"></div>
+                </section>
+            </div>
+
+            <!-- Typing Activity -->
+            <section class="card">
+                <h2>Typing Activity by Hour</h2>
+                <div class="chart-container-wide">
+                    <canvas id="typing-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Weekly Trends -->
+            <section class="card">
+                <h2>Weekly Trends</h2>
+                <div class="chart-container-wide">
+                    <canvas id="weekly-chart"></canvas>
+                </div>
+                <div class="weekly-insights" id="weekly-insights"></div>
+            </section>
+
+            <!-- Recommendations -->
+            <section class="card recommendations-card">
+                <h2>Recommendations</h2>
+                <div id="recommendations-list" class="recommendations-list"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Activity Tracker &mdash; All data stored locally on your machine</p>
+            <p class="status" id="status-text">Loading...</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

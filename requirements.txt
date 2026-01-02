@@ -1,0 +1,24 @@
+# Mac Activity Tracker Requirements
+
+# macOS integration
+pyobjc-core>=9.0
+pyobjc-framework-Cocoa>=9.0
+pyobjc-framework-Quartz>=9.0
+pyobjc-framework-ApplicationServices>=9.0
+pyobjc-framework-ScriptingBridge>=9.0
+
+# Web dashboard
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Data processing and analytics
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Database
+sqlalchemy>=2.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+psutil>=5.9.0
+rumps>=0.4.0  # Menu bar app

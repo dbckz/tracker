@@ -1,0 +1,396 @@
+/* Mac Activity Tracker Dashboard Styles */
+
+:root {
+    --bg-color: #0d1117;
+    --card-bg: #161b22;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --accent-blue: #58a6ff;
+    --accent-green: #3fb950;
+    --accent-yellow: #d29922;
+    --accent-red: #f85149;
+    --accent-purple: #a371f7;
+    --border-color: #30363d;
+    --hover-bg: #1f2937;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.date-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-selector input[type="date"] {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn:hover {
+    background: var(--hover-bg);
+}
+
+.btn-icon {
+    padding: 8px 12px;
+    font-weight: bold;
+}
+
+/* Cards */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+/* Productivity Score */
+.productivity-card {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+}
+
+.score-display {
+    flex-shrink: 0;
+}
+
+.score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent-green) 0%, var(--card-bg) 0%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.score-circle::before {
+    content: '';
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: var(--card-bg);
+    border-radius: 50%;
+}
+
+.score-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+}
+
+.score-grade {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    position: relative;
+    z-index: 1;
+}
+
+.score-details {
+    flex: 1;
+}
+
+.score-breakdown {
+    display: flex;
+    gap: 30px;
+    margin: 16px 0;
+}
+
+.breakdown-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.breakdown-item .label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.breakdown-item .value {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.feedback {
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(88, 166, 255, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-blue);
+}
+
+.feedback p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+}
+
+/* Highlights */
+.highlights-list {
+    list-style: none;
+}
+
+.highlights-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.highlights-list li:last-child {
+    border-bottom: none;
+}
+
+.highlights-list li::before {
+    content: '✓';
+    color: var(--accent-green);
+    font-weight: bold;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* Charts */
+.charts-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.chart-card {
+    margin-bottom: 0;
+}
+
+.chart-container {
+    height: 250px;
+    position: relative;
+}
+
+.chart-container-wide {
+    height: 300px;
+    position: relative;
+}
+
+.chart-legend {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.85rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* Weekly Insights */
+.weekly-insights {
+    margin-top: 20px;
+    padding: 16px;
+    background: rgba(163, 113, 247, 0.1);
+    border-radius: 8px;
+}
+
+.weekly-insights p {
+    margin: 6px 0;
+    font-size: 0.9rem;
+}
+
+/* Recommendations */
+.recommendations-list {
+    display: grid;
+    gap: 12px;
+}
+
+.recommendation {
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-blue);
+    background: rgba(88, 166, 255, 0.05);
+}
+
+.recommendation.health {
+    border-left-color: var(--accent-red);
+    background: rgba(248, 81, 73, 0.05);
+}
+
+.recommendation.productivity {
+    border-left-color: var(--accent-green);
+    background: rgba(63, 185, 80, 0.05);
+}
+
+.recommendation h3 {
+    font-size: 1rem;
+    margin-bottom: 6px;
+}
+
+.recommendation p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.recommendation .priority {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+/* Footer */
+footer {
+    margin-top: 40px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.status {
+    margin-top: 8px;
+    color: var(--accent-green);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .productivity-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .score-breakdown {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+/* Loading State */
+.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* No Data State */
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.no-data-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
