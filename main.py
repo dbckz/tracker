@@ -35,16 +35,27 @@ def signal_handler(signum, frame, tracker=None):
     sys.exit(0)
 
 
+def get_dashboard_url(port: int) -> str:
+    """Get the best URL for the dashboard (custom hostname if available)."""
+    import socket
+    # Check if tracker.local resolves (custom hostname set up)
+    try:
+        socket.gethostbyname('tracker.local')
+        return f'http://tracker.local:{port}'
+    except socket.gaierror:
+        return f'http://localhost:{port}'
+
+
 def run_with_dashboard(tracker: ActivityTrackerController, port: int = 5050,
-                      open_browser: bool = True):
+                      open_browser: bool = True, host: str = '0.0.0.0'):
     """Run tracker with web dashboard."""
     # Start the tracker
     tracker.start()
 
-    # Start dashboard in a thread
+    # Start dashboard in a thread (bind to 0.0.0.0 to accept custom hostnames)
     dashboard_thread = threading.Thread(
         target=run_dashboard,
-        kwargs={'host': '127.0.0.1', 'port': port, 'debug': False, 'db': tracker.db},
+        kwargs={'host': host, 'port': port, 'debug': False, 'db': tracker.db},
         daemon=True
     )
     dashboard_thread.start()
@@ -52,7 +63,7 @@ def run_with_dashboard(tracker: ActivityTrackerController, port: int = 5050,
     # Open browser after a short delay
     if open_browser:
         sleep(1.5)
-        webbrowser.open(f'http://127.0.0.1:{port}')
+        webbrowser.open(get_dashboard_url(port))
 
     # Keep running until interrupted
     try:
@@ -78,10 +89,10 @@ def run_with_menu_bar(tracker: ActivityTrackerController, port: int = 5050):
     # Start the tracker
     tracker.start()
 
-    # Start dashboard in background
+    # Start dashboard in background (bind to 0.0.0.0 for custom hostnames)
     dashboard_thread = threading.Thread(
         target=run_dashboard,
-        kwargs={'host': '127.0.0.1', 'port': port, 'debug': False, 'db': tracker.db},
+        kwargs={'host': '0.0.0.0', 'port': port, 'debug': False, 'db': tracker.db},
         daemon=True
     )
     dashboard_thread.start()
@@ -100,11 +111,12 @@ def run_dashboard_only(port: int = 5050, open_browser: bool = True):
     db = Database()
     print("\n📊 Starting Activity Dashboard (view mode)")
     print(f"   Database: {db.db_path}")
+    print(f"   URL: {get_dashboard_url(port)}")
 
     if open_browser:
-        threading.Timer(1.5, lambda: webbrowser.open(f'http://127.0.0.1:{port}')).start()
+        threading.Timer(1.5, lambda: webbrowser.open(get_dashboard_url(port))).start()
 
-    run_dashboard(host='127.0.0.1', port=port, debug=False, db=db)
+    run_dashboard(host='0.0.0.0', port=port, debug=False, db=db)
 
 
 def main():

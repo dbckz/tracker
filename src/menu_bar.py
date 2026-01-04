@@ -3,9 +3,19 @@ Menu Bar Application for Mac Activity Tracker.
 Provides a system tray icon with quick access to stats and controls.
 """
 
+import socket
 import webbrowser
 import threading
 from datetime import datetime
+
+
+def get_dashboard_url(port: int = 5050) -> str:
+    """Get the best URL for the dashboard."""
+    try:
+        socket.gethostbyname('tracker.local')
+        return f'http://tracker.local:{port}'
+    except socket.gaierror:
+        return f'http://localhost:{port}'
 
 try:
     import rumps
@@ -124,7 +134,7 @@ class ActivityTrackerMenuBar(rumps.App if RUMPS_AVAILABLE else object):
     @rumps.clicked('Open Dashboard')
     def open_dashboard(self, sender=None):
         """Open the web dashboard in browser."""
-        webbrowser.open('http://127.0.0.1:5050')
+        webbrowser.open(get_dashboard_url())
 
     @rumps.clicked('Pause Tracking')
     def toggle_tracking(self, sender):
