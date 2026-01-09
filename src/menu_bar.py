@@ -154,6 +154,13 @@ class ActivityTrackerMenuBar(rumps.App if RUMPS_AVAILABLE else object):
     @rumps.clicked('Quit')
     def quit_app(self, sender=None):
         """Quit the application, saving all data."""
+        # Stop the update timer to prevent resource leak
+        if self._timer:
+            try:
+                self._timer.stop()
+            except Exception:
+                pass
+
         if self.tracker:
             try:
                 self.tracker.stop()

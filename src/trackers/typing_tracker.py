@@ -102,9 +102,11 @@ class TypingTracker:
         self._stats_thread: Optional[threading.Thread] = None
         self._run_loop = None
 
-        # Keystroke tracking
-        self._keystrokes = deque()  # (timestamp, keycode) for WPM calculation
-        self._word_boundaries = deque()  # timestamps of word completions
+        # Keystroke tracking - use maxlen to prevent unbounded memory growth
+        # At 100 keystrokes/min, 2000 entries = ~20 minutes of history
+        # This is more than enough for WPM calculation (default 60 second window)
+        self._keystrokes = deque(maxlen=2000)  # (timestamp, keycode) for WPM calculation
+        self._word_boundaries = deque(maxlen=500)  # timestamps of word completions
 
         # Statistics
         self.total_keystrokes = 0

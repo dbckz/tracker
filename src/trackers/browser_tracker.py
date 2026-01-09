@@ -22,6 +22,9 @@ except ImportError:
 
 from .app_tracker import BROWSER_BUNDLE_IDS, is_browser
 
+# Maximum number of domains to keep in memory to prevent unbounded growth
+MAX_DOMAINS_IN_MEMORY = 500
+
 
 class BrowserTracker:
     """Tracks website activity across different browsers."""
@@ -50,6 +53,24 @@ class BrowserTracker:
         # Statistics
         self.total_site_changes = 0
         self.domains_visited: Dict[str, float] = {}
+        self._cleanup_counter = 0  # Track iterations for periodic cleanup
+
+        # Cache for ScriptingBridge browser app references to prevent memory leaks
+        # Creating new SBApplication objects every poll cycle leaks PyObjC bridge objects
+        self._browser_app_cache: Dict[str, any] = {}
+
+    def _get_browser_app(self, bundle_id: str):
+        """Get a cached ScriptingBridge application reference.
+
+        Caching prevents memory leaks from creating new SBApplication objects
+        on every poll cycle.
+        """
+        if bundle_id not in self._browser_app_cache:
+            if MACOS_AVAILABLE:
+                self._browser_app_cache[bundle_id] = SBApplication.applicationWithBundleIdentifier_(bundle_id)
+            else:
+                self._browser_app_cache[bundle_id] = None
+        return self._browser_app_cache[bundle_id]
 
     def _extract_domain(self, url: str) -> str:
         """Extract domain from URL."""
@@ -71,7 +92,7 @@ class BrowserTracker:
             return None, None
 
         try:
-            safari = SBApplication.applicationWithBundleIdentifier_("com.apple.Safari")
+            safari = self._get_browser_app("com.apple.Safari")
             if safari and safari.windows() and len(safari.windows()) > 0:
                 window = safari.windows()[0]
                 if window.currentTab():
@@ -89,7 +110,7 @@ class BrowserTracker:
             return None, None
 
         try:
-            chrome = SBApplication.applicationWithBundleIdentifier_("com.google.Chrome")
+            chrome = self._get_browser_app("com.google.Chrome")
             if chrome and chrome.windows() and len(chrome.windows()) > 0:
                 window = chrome.windows()[0]
                 if window.activeTab():
@@ -109,6 +130,7 @@ class BrowserTracker:
         if not os.path.exists(firefox_profile):
             return None, None
 
+        temp_db = "/tmp/firefox_places_temp.sqlite"
         try:
             # Find the default profile
             profiles = [d for d in os.listdir(firefox_profile) if d.endswith('.default') or 'default' in d.lower()]
@@ -120,27 +142,35 @@ class BrowserTracker:
                 if os.path.exists(places_db):
                     # Copy to temp to avoid locking issues
                     import shutil
-                    temp_db = "/tmp/firefox_places_temp.sqlite"
                     shutil.copy2(places_db, temp_db)
 
                     conn = sqlite3.connect(temp_db)
-                    cursor = conn.cursor()
+                    try:
+                        cursor = conn.cursor()
 
-                    # Get most recent visit
-                    cursor.execute("""
-                        SELECT p.url, p.title
-                        FROM moz_places p
-                        JOIN moz_historyvisits h ON p.id = h.place_id
-                        ORDER BY h.visit_date DESC
-                        LIMIT 1
-                    """)
-                    result = cursor.fetchone()
-                    conn.close()
+                        # Get most recent visit
+                        cursor.execute("""
+                            SELECT p.url, p.title
+                            FROM moz_places p
+                            JOIN moz_historyvisits h ON p.id = h.place_id
+                            ORDER BY h.visit_date DESC
+                            LIMIT 1
+                        """)
+                        result = cursor.fetchone()
 
-                    if result:
-                        return result[0], result[1]
+                        if result:
+                            return result[0], result[1]
+                    finally:
+                        conn.close()
         except Exception:
             pass
+        finally:
+            # Clean up temp file to prevent resource leak
+            try:
+                if os.path.exists(temp_db):
+                    os.remove(temp_db)
+            except Exception:
+                pass
 
         return None, None
 
@@ -150,7 +180,7 @@ class BrowserTracker:
             return None, None
 
         try:
-            arc = SBApplication.applicationWithBundleIdentifier_("company.thebrowser.Browser")
+            arc = self._get_browser_app("company.thebrowser.Browser")
             if arc and arc.windows() and len(arc.windows()) > 0:
                 window = arc.windows()[0]
                 if hasattr(window, 'activeTab') and window.activeTab():
@@ -168,7 +198,7 @@ class BrowserTracker:
             return None, None
 
         try:
-            brave = SBApplication.applicationWithBundleIdentifier_("com.brave.Browser")
+            brave = self._get_browser_app("com.brave.Browser")
             if brave and brave.windows() and len(brave.windows()) > 0:
                 window = brave.windows()[0]
                 if hasattr(window, 'activeTab') and window.activeTab():
@@ -197,7 +227,7 @@ class BrowserTracker:
         # For other Chromium-based browsers, try Chrome-like API
         if bundle_id in ['com.microsoft.edgemac', 'com.operasoftware.Opera', 'com.vivaldi.Vivaldi']:
             try:
-                browser = SBApplication.applicationWithBundleIdentifier_(bundle_id)
+                browser = self._get_browser_app(bundle_id)
                 if browser and browser.windows() and len(browser.windows()) > 0:
                     window = browser.windows()[0]
                     if hasattr(window, 'activeTab') and window.activeTab():
@@ -239,6 +269,21 @@ class BrowserTracker:
             }
 
         return None
+
+    def _prune_domains_visited(self):
+        """Prune domains_visited to prevent unbounded memory growth.
+
+        Keeps only the top domains by duration when the dict exceeds MAX_DOMAINS_IN_MEMORY.
+        """
+        if len(self.domains_visited) > MAX_DOMAINS_IN_MEMORY:
+            # Keep top 80% of max to avoid frequent pruning
+            keep_count = int(MAX_DOMAINS_IN_MEMORY * 0.8)
+            top_domains = sorted(
+                self.domains_visited.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:keep_count]
+            self.domains_visited = dict(top_domains)
 
     def _tracking_loop(self):
         """Main tracking loop for browser activity."""
@@ -311,6 +356,12 @@ class BrowserTracker:
 
             except Exception as e:
                 print(f"Error in browser tracking loop: {e}")
+
+            # Periodic cleanup to prevent memory growth (every ~5 minutes)
+            self._cleanup_counter += 1
+            if self._cleanup_counter >= 150:  # 150 * 2 sec poll = 5 min
+                self._prune_domains_visited()
+                self._cleanup_counter = 0
 
             time.sleep(self.poll_interval)
 

@@ -7,8 +7,12 @@ from datetime import datetime, date, timedelta
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 import statistics
+import time
 
 from ..database import Database, AppActivity, WebsiteActivity, TypingActivity, DailySummary
+
+# Cache TTL in seconds - how long to cache query results
+CACHE_TTL_SECONDS = 30
 
 
 class ActivityAnalyzer:
@@ -16,9 +20,42 @@ class ActivityAnalyzer:
 
     def __init__(self, db: Database):
         self.db = db
+        # Query result cache to prevent repeated expensive queries
+        # Structure: {cache_key: (timestamp, result)}
+        self._cache: Dict[str, Tuple[float, any]] = {}
+        self._cache_max_size = 100  # Max cache entries to prevent unbounded growth
+
+    def _get_cached(self, cache_key: str):
+        """Get a cached result if it exists and is not expired."""
+        if cache_key in self._cache:
+            timestamp, result = self._cache[cache_key]
+            if time.time() - timestamp < CACHE_TTL_SECONDS:
+                return result
+            # Expired, remove it
+            del self._cache[cache_key]
+        return None
+
+    def _set_cached(self, cache_key: str, result):
+        """Cache a result with current timestamp."""
+        # Prune cache if too large
+        if len(self._cache) >= self._cache_max_size:
+            # Remove oldest entries (first 20%)
+            sorted_keys = sorted(
+                self._cache.keys(),
+                key=lambda k: self._cache[k][0]
+            )
+            for key in sorted_keys[:int(self._cache_max_size * 0.2)]:
+                del self._cache[key]
+
+        self._cache[cache_key] = (time.time(), result)
 
     def get_app_summary_for_date(self, target_date: date) -> Dict:
         """Get summarized app usage for a specific date."""
+        cache_key = f"app_summary_{target_date.isoformat()}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         session = self.db.get_session()
         try:
             activities = session.query(AppActivity).filter_by(date=target_date).all()
@@ -30,7 +67,7 @@ class ActivityAnalyzer:
             total_time = sum(app_times.values())
             sorted_apps = sorted(app_times.items(), key=lambda x: x[1], reverse=True)
 
-            return {
+            result = {
                 'date': target_date.isoformat(),
                 'total_seconds': total_time,
                 'total_hours': round(total_time / 3600, 2),
@@ -47,11 +84,18 @@ class ActivityAnalyzer:
                 'top_app': sorted_apps[0][0] if sorted_apps else None,
                 'top_app_hours': round(sorted_apps[0][1] / 3600, 2) if sorted_apps else 0
             }
+            self._set_cached(cache_key, result)
+            return result
         finally:
             self.db.close_session()
 
     def get_website_summary_for_date(self, target_date: date) -> Dict:
         """Get summarized website usage for a specific date."""
+        cache_key = f"website_summary_{target_date.isoformat()}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         session = self.db.get_session()
         try:
             activities = session.query(WebsiteActivity).filter_by(date=target_date).all()
@@ -64,7 +108,7 @@ class ActivityAnalyzer:
             total_time = sum(domain_times.values())
             sorted_domains = sorted(domain_times.items(), key=lambda x: x[1], reverse=True)
 
-            return {
+            result = {
                 'date': target_date.isoformat(),
                 'total_seconds': total_time,
                 'total_hours': round(total_time / 3600, 2),
@@ -81,11 +125,18 @@ class ActivityAnalyzer:
                 'top_domain': sorted_domains[0][0] if sorted_domains else None,
                 'top_domain_hours': round(sorted_domains[0][1] / 3600, 2) if sorted_domains else 0
             }
+            self._set_cached(cache_key, result)
+            return result
         finally:
             self.db.close_session()
 
     def get_typing_summary_for_date(self, target_date: date) -> Dict:
         """Get typing statistics for a specific date."""
+        cache_key = f"typing_summary_{target_date.isoformat()}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         session = self.db.get_session()
         try:
             activities = session.query(TypingActivity).filter_by(date=target_date).all()
@@ -106,7 +157,7 @@ class ActivityAnalyzer:
             active_hours = len([h for h in hourly_data if hourly_data[h]['keystrokes'] > 0])
             avg_wpm = round(total_words / (active_hours * 60) if active_hours > 0 else 0, 1)
 
-            return {
+            result = {
                 'date': target_date.isoformat(),
                 'total_keystrokes': total_keystrokes,
                 'total_words': total_words,
@@ -115,6 +166,8 @@ class ActivityAnalyzer:
                 'peak_hour': peak_hour,
                 'hourly_breakdown': dict(hourly_data)
             }
+            self._set_cached(cache_key, result)
+            return result
         finally:
             self.db.close_session()
 
@@ -162,6 +215,11 @@ class ActivityAnalyzer:
         if end_date is None:
             end_date = date.today()
 
+        cache_key = f"weekly_trends_{end_date.isoformat()}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         start_date = end_date - timedelta(days=6)
         days_data = []
 
@@ -179,7 +237,7 @@ class ActivityAnalyzer:
         total_hours_list = [d['apps']['total_hours'] for d in days_data]
         words_list = [d['typing']['total_words'] for d in days_data]
 
-        return {
+        result = {
             'start_date': start_date.isoformat(),
             'end_date': end_date.isoformat(),
             'days': days_data,
@@ -192,6 +250,8 @@ class ActivityAnalyzer:
             'most_productive_day': self._find_most_productive_day(days_data),
             'insights': self._generate_weekly_insights(days_data)
         }
+        self._set_cached(cache_key, result)
+        return result
 
     def _find_most_productive_day(self, days_data: List[Dict]) -> Optional[str]:
         """Find the most productive day based on activity metrics."""
