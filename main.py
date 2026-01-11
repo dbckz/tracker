@@ -16,6 +16,7 @@ Usage:
 """
 
 import argparse
+import os
 import signal
 import sys
 import threading
@@ -152,8 +153,8 @@ Notes:
     parser.add_argument(
         '--port', '-p',
         type=int,
-        default=5050,
-        help='Port for the web dashboard (default: 5050)'
+        default=int(os.getenv('PORT', 5050)),
+        help='Port for the web dashboard (default: 5050 or PORT env var)'
     )
 
     parser.add_argument(
